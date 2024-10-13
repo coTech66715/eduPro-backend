@@ -2,6 +2,8 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./db/db');
+const bodyParser = require('body-parser')
+const assignmentRoute = require('./routes/assignmentRoute')
 
 
 dotenv.config();
@@ -14,6 +16,8 @@ connectDB();
 
 
 app.use(express.json()); 
+app.use(bodyParser.json())
+app.use('/uploads', express.static('uploads'))
 app.use(cors()); 
 
 
@@ -30,6 +34,8 @@ app.use((err, req, res, next) => {
   console.error(err.message);
   res.status(500).send('Server Error');
 });
+
+app.use('/api/assignments', assignmentRoute)
 
 
 const PORT = process.env.PORT || 5000;
