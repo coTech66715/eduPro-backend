@@ -25,6 +25,7 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, role: 'user' });
   } catch (error) {
+
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -45,9 +46,21 @@ exports.signupUser = async (req, res) => {
     });
 
     await user.save();
-    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '4h' });
     res.json({ token, role: 'user' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.getUserDetails = async(req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password')
+    if(!user) {
+      res.status(404).json({ message: 'User not found'})
+    }
+    res.json(user)
+  } catch (error) {
+    res.status(500).json({ message: 'Server error'})
+  }
+}
