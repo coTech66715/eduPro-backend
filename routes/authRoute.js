@@ -12,4 +12,9 @@ router.post('/signup', signupUser);
 // Get user info route
 router.get('/user/details', authMiddleware, getUserDetails)
 
+// Logout
+router.post('/logout', authMiddleware, (req, res) => {
+    res.status(200).json({ message: 'Logout successful'})
+})
+
 module.exports = router;

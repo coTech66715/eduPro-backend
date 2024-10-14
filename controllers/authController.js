@@ -54,13 +54,15 @@ exports.signupUser = async (req, res) => {
 };
 
 exports.getUserDetails = async(req, res) => {
+  console.log('getUserDetails hit, user:', req.user);
   try {
-    const user = await User.findById(req.user.userId).select('-password')
+    const user = await User.findById(req.user._id).select('-password')
     if(!user) {
       res.status(404).json({ message: 'User not found'})
     }
     res.json(user)
   } catch (error) {
+    console.error('getUserDetails error:', error);
     res.status(500).json({ message: 'Server error'})
   }
 }

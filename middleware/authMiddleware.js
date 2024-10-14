@@ -2,9 +2,12 @@ const jwt = require('jsonwebtoken')
 const User = require('../models/userModel')
 
 const authMiddleware = async(req, res, next) => {
+    console.log('Auth middleware hit');
+    console.log('Headers:', req.headers);
     try {
         const authHeader = req.headers.authorization
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.log('No token provided');
             return res.status(401).json({ message: 'Authentication required. No token provided.' });
         }
         const token = authHeader.split(' ')[1]
