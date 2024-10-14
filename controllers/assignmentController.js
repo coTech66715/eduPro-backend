@@ -6,6 +6,7 @@ const submitAssignment = async (req, res) => {
         const files = req.files.map(files => files.filename)
 
         const newAssignment = new Assignment({
+            userId: req.user._id,
             name,
             email,
             studentId,
@@ -17,6 +18,7 @@ const submitAssignment = async (req, res) => {
             files
         })
 
+
         await newAssignment.save()
         res.status(201).json({ message: 'Assignment submitted successfully!'})
     } catch (error) {
@@ -25,4 +27,20 @@ const submitAssignment = async (req, res) => {
     }
 }
 
-module.exports = { submitAssignment}
+const getRecentAssignments = async(req, res) => {
+    try {
+        const assignments = await Assignment.find({userId: req.user._id})
+        .sort({ createdAt: -1})
+        .limit(5);
+
+        if(assignments.length === 0) {
+            return res.status(404).json({ message: 'No recent assignment found'})
+        }
+        res.status(200).json(assignments)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error'})
+    }
+}
+
+module.exports = { submitAssignment, getRecentAssignments}

@@ -1,6 +1,11 @@
 const mongoose = require('mongoose')
 
 const assignmentSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     name: {
         type: String,
         required: true,
@@ -27,7 +32,7 @@ const assignmentSchema = new mongoose.Schema({
         required: true
     },
     description: String,
-    files: [String]
+    files: [{type: String}]
 }, {timestamps: true})
 
 const Assignment = mongoose.model('Assignment', assignmentSchema)
