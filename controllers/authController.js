@@ -12,7 +12,7 @@ exports.loginUser = async (req, res) => {
   const { username, password } = req.body;
   try {
     if (username === adminCredentials.username && password === adminCredentials.password) {
-      const token = jwt.sign({ username, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign({ username, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, role: 'admin' });
     }
 
@@ -22,7 +22,7 @@ exports.loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, role: 'user' });
   } catch (error) {
 
@@ -54,13 +54,31 @@ exports.signupUser = async (req, res) => {
 };
 
 exports.getUserDetails = async(req, res) => {
+  console.log('getUserDetails hit, user:', req.user);
   try {
-    const user = await User.findById(req.user.userId).select('-password')
+    const user = await User.findById(req.user._id).select('-password')
     if(!user) {
-      res.status(404).json({ message: 'User not found'})
+      console.log('User not found in database')
+      return res.status(404).json({ message: 'User not found'})
     }
+    console.log('User details fetched successfully', user)
     res.json(user)
   } catch (error) {
+    console.error('getUserDetails error:', error);
+    res.status(500).json({ message: 'Server error'})
+  }
+}
+
+exports.getAllUsers = async (req, res) => {
+  if(req.user.role !== 'admin') {
+    return res.status(403).json({message: 'Access denied. Admin only'})
+  }
+  try {
+    const users = await User.find().select('-password')
+    res.json(users)
+  }
+  catch(error){
+    console.error('getAllUsers error:', error);
     res.status(500).json({ message: 'Server error'})
   }
 }
