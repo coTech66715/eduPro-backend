@@ -22,7 +22,7 @@ exports.loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, role: 'user' });
   } catch (error) {
 
@@ -65,6 +65,20 @@ exports.getUserDetails = async(req, res) => {
     res.json(user)
   } catch (error) {
     console.error('getUserDetails error:', error);
+    res.status(500).json({ message: 'Server error'})
+  }
+}
+
+exports.getAllUsers = async (req, res) => {
+  if(req.user.role !== 'admin') {
+    return res.status(403).json({message: 'Access denied. Admin only'})
+  }
+  try {
+    const users = await User.find().select('-password')
+    res.json(users)
+  }
+  catch(error){
+    console.error('getAllUsers error:', error);
     res.status(500).json({ message: 'Server error'})
   }
 }

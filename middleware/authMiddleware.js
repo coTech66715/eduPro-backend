@@ -12,6 +12,11 @@ const authMiddleware = async(req, res, next) => {
         // Verify the token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+        if(decoded.role === 'admin'){
+            req.user = { role: 'admin'}
+            return next()
+        }
+
         // Find the user
         const user = await User.findById(decoded.userId).select('-password');
         if (!user) {
