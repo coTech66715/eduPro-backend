@@ -1,5 +1,5 @@
 const express = require('express');
-const { loginUser, signupUser, getUserDetails, getAllUsers } = require('../controllers/authController');
+const { loginUser, signupUser, getUserDetails, getAllUsers, getUserCount } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
@@ -19,5 +19,8 @@ router.post('/logout', authMiddleware, (req, res) => {
 
 // Get all users
 router.get('/users', authMiddleware, getAllUsers)
+
+// Get total users
+router.get('/users/count', authMiddleware, getUserCount)
 
 module.exports = router;

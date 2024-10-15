@@ -82,3 +82,16 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({ message: 'Server error'})
   }
 }
+
+exports.getUserCount = async (req, res) => {
+  if(req.user.role !== 'admin') {
+    return res.status(403).json({message: 'Access denied. Admin only'})
+  }
+  try {
+    const count = await User.countDocuments();
+    res.json({ count })
+  } catch (error) {
+    console.error('getUserCount error:', error);
+    res.status(500).json({ message: 'Server error'})
+  }
+}
