@@ -43,4 +43,16 @@ const getRecentAssignments = async(req, res) => {
     }
 }
 
-module.exports = { submitAssignment, getRecentAssignments}
+const getAllAssignments = async (req, res) => {
+    try {
+        const assignments = await Assignment.find()
+        .sort({ createdAt: -1})
+        .populate('userId', 'name', 'email', 'programme')
+        res.status(200).json(assignments)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error'})
+    }
+}
+
+module.exports = { submitAssignment, getRecentAssignments, getAllAssignments}

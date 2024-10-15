@@ -18,7 +18,9 @@ const assignmentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    phoneNumber: String,
+    phoneNumber: {
+        type: String
+    },
     programme: {
         type: String,
         required: true
