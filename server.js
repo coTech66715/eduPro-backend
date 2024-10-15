@@ -4,6 +4,7 @@ const cors = require('cors');
 const connectDB = require('./db/db');
 const bodyParser = require('body-parser')
 const assignmentRoute = require('./routes/assignmentRoute')
+const authRoutes = require('./routes/authRoute');
 
 
 dotenv.config();
@@ -20,8 +21,13 @@ app.use(bodyParser.json())
 app.use('/uploads', express.static('uploads'))
 app.use(cors()); 
 
+app.use(cors({
+  origin: 'http://localhost:3000', 
+  credentials: true
+}))
 
-const authRoutes = require('./routes/authRoute');
+
+
 app.use('/api/auth', authRoutes);
 
 

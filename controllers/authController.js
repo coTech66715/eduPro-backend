@@ -12,7 +12,7 @@ exports.loginUser = async (req, res) => {
   const { username, password } = req.body;
   try {
     if (username === adminCredentials.username && password === adminCredentials.password) {
-      const token = jwt.sign({ username, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign({ username, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, role: 'admin' });
     }
 
@@ -58,8 +58,10 @@ exports.getUserDetails = async(req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password')
     if(!user) {
-      res.status(404).json({ message: 'User not found'})
+      console.log('User not found in database')
+      return res.status(404).json({ message: 'User not found'})
     }
+    console.log('User details fetched successfully', user)
     res.json(user)
   } catch (error) {
     console.error('getUserDetails error:', error);
