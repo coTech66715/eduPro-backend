@@ -1,4 +1,6 @@
 const Assignment = require('../models/assignmentModel')
+const path = require('path')
+const fs = require('fs')
 
 const submitAssignment = async (req, res) => {
     try {
@@ -47,7 +49,7 @@ const getAllAssignments = async (req, res) => {
     try {
         const assignments = await Assignment.find()
         .sort({ createdAt: -1})
-        .populate('userId', 'name', 'email', 'programme')
+        .populate('userId', 'name, email, programme, phoneNumber')
         res.status(200).json(assignments)
     } catch (error) {
         console.error(error);
@@ -55,4 +57,33 @@ const getAllAssignments = async (req, res) => {
     }
 }
 
-module.exports = { submitAssignment, getRecentAssignments, getAllAssignments}
+const downloadFile = async(req, res) => {
+    try {
+        const {assignmentId, filename} = req.params;
+
+        const assignment = await Assignment.findById(assignmentId)
+        if(!assignment) {
+            return res.status(404).json({ message: 'Assignment not found'})
+        }
+        if(!assignment.files.includes(filename)){
+            return res.status(404).json({ message: 'File not found for this assignment'})
+        }
+
+        const filePath = path.join(__dirname, '..', 'uploads', filename)
+
+        if(fs.existsSync(filePath)){
+            res.download(filePath, filename, (err) => {
+                if(err) {
+                    res.status(500).json({ message: 'Error downloading file'})
+                }
+            })
+        } else {
+            res.status(404).json({ message: 'File not found'})
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server error'})
+    }
+}
+
+
+module.exports = { submitAssignment, getRecentAssignments, getAllAssignments, downloadFile}
