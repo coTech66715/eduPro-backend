@@ -86,4 +86,56 @@ const downloadFile = async(req, res) => {
 }
 
 
-module.exports = { submitAssignment, getRecentAssignments, getAllAssignments, downloadFile}
+const updateAssignmentStatus = async (req, res) => {
+    try {
+        const {assignmentId} = req.params;
+        const {status} = req.body
+
+        const assignment = await Assignment.findById(assignmentId)
+        if(!assignment) {
+            return res.status(404).json({ message: 'Assignment not found'})
+        }
+
+        assignment.status = status;
+        await assignment.save()
+
+        res.status(200).json({ message: 'Assignment status updated successfully'})
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error'})
+    }
+}
+
+
+const completeAssignment = async (req, res) => {
+    try {
+        const { assignmentId } = req.params;
+        const { feedback, fee } = req.body;
+        
+        console.log('Request body:', req.body);
+        console.log('Files:', req.files);
+
+        const files = req.files ? req.files.map(file => file.filename) : [];
+
+        const assignment = await Assignment.findById(assignmentId);
+        if (!assignment) {
+            return res.status(404).json({ message: 'Assignment not found' });
+        }
+
+        assignment.status = 'submitted';
+        assignment.feedback = feedback;
+        assignment.fee = parseFloat(fee);  // Ensure fee is stored as a number
+        if (files.length > 0) {
+            assignment.completionFiles = files;
+        }
+
+        await assignment.save();
+
+        res.status(200).json({ message: 'Assignment completed successfully' });
+    } catch (error) {
+        console.error('Error in completeAssignment:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+module.exports = { submitAssignment, getRecentAssignments, getAllAssignments, downloadFile, completeAssignment, updateAssignmentStatus}
