@@ -34,7 +34,15 @@ const assignmentSchema = new mongoose.Schema({
         required: true
     },
     description: String,
-    files: [{type: String}]
+    files: [{type: String}],
+    status: {
+        type: String,
+        enum: ['pending', 'in_progress', 'submitted'],
+        default: 'pending'
+    },
+    feedback: String,
+    fee: Number,
+    completionFiles: [{type: String}]
 }, {timestamps: true})
 
 const Assignment = mongoose.model('Assignment', assignmentSchema)
