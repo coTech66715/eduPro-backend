@@ -124,12 +124,12 @@ const completeAssignment = async (req, res) => {
 
         assignment.status = 'submitted';
         assignment.feedback = feedback;
-        assignment.fee = parseFloat(fee);  // Ensure fee is stored as a number
+        assignment.fee = parseFloat(fee);  
         if (files.length > 0) {
             assignment.completionFiles = files;
         }
 
-        await assignment.save();
+        await assignment.save({ validateBeforeSave: false});
 
         res.status(200).json({ message: 'Assignment completed successfully' });
     } catch (error) {
