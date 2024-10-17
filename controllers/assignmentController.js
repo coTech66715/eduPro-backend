@@ -7,6 +7,10 @@ const submitAssignment = async (req, res) => {
         const { name, email, studentId, phoneNumber, programme, course, deadline, description} = req.body;
         const files = req.files.map(files => files.filename)
 
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+
         const newAssignment = new Assignment({
             userId: req.user._id,
             name,
