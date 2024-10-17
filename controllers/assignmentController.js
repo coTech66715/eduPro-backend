@@ -7,6 +7,10 @@ const submitAssignment = async (req, res) => {
         const { name, email, studentId, phoneNumber, programme, course, deadline, description} = req.body;
         const files = req.files.map(files => files.filename)
 
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+
         const newAssignment = new Assignment({
             userId: req.user._id,
             name,
@@ -138,4 +142,38 @@ const completeAssignment = async (req, res) => {
     }
 };
 
-module.exports = { submitAssignment, getRecentAssignments, getAllAssignments, downloadFile, completeAssignment, updateAssignmentStatus}
+const paymentStatus = async(req, res) => {
+    try {
+        const { assignmentId } = req.params;
+        const { paymentStatus } = req.body;
+
+        const assignment = await Assignment.findByIdAndUpdate(
+            assignmentId,
+            { paymentStatus },
+            { new: true}
+        )
+
+        if(!assignment) {
+            return res.status(404).json({ message: 'Assingment not found'})
+        }
+        res.status(200).json({ message: 'Payment status updated successfully', assignment})
+    } catch (error) {
+        console.error('Error updating payment status:', error);
+        res.status(500).json({ message: 'Server error'})
+    }
+}
+
+const completed = async(req, res) => {
+    try {
+        const completedAssignments = await Assignment.find({
+            userId: req.user._id,
+            status: 'submitted'
+        }).sort({ updatedAt: -1})
+        res.status(200).json(completedAssignments)
+    } catch (error) {
+        console.error('Error fetching completed assignments:', error);
+        res.status(500).json({ message: 'Server error'})
+    }
+}
+
+module.exports = { submitAssignment, getRecentAssignments, getAllAssignments, downloadFile, completeAssignment, updateAssignmentStatus, paymentStatus, completed}
