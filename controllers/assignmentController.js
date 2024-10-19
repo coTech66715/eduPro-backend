@@ -119,7 +119,12 @@ const completeAssignment = async (req, res) => {
         console.log('Request body:', req.body);
         console.log('Files:', req.files);
 
-        const files = req.files ? req.files.map(file => file.filename) : [];
+        const files = req.files ? req.files.map(file => ({
+            name: file.filename,
+            originalName: file.originalname,
+            size: file.size,
+            path: file.path
+        })) : []
 
         const assignment = await Assignment.findById(assignmentId);
         if (!assignment) {
@@ -133,9 +138,9 @@ const completeAssignment = async (req, res) => {
             assignment.completionFiles = files;
         }
 
-        await assignment.save({ validateBeforeSave: false});
+        await assignment.save({validateBeforeSave:false});
 
-        res.status(200).json({ message: 'Assignment completed successfully' });
+        res.status(200).json({ message: 'Assignment completed successfully', files: assignment.completionFiles });
     } catch (error) {
         console.error('Error in completeAssignment:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
