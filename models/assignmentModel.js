@@ -42,7 +42,12 @@ const assignmentSchema = new mongoose.Schema({
     },
     feedback: String,
     fee: Number,
-    completionFiles: [{type: String}]
+    completionFiles: [{
+        name: String,
+        originName: String,
+        size: Number,
+        path: String
+    }]
 }, {timestamps: true})
 
 const Assignment = mongoose.model('Assignment', assignmentSchema)
