@@ -4,8 +4,19 @@ const fs = require('fs')
 
 const submitAssignment = async (req, res) => {
     try {
-        const { name, email, studentId, phoneNumber, programme, course, deadline, description} = req.body;
-        const files = req.files.map(files => files.filename)
+        const { name, email, studentId, phoneNumber, programme, course, deadline, description } = req.body;
+        
+        
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: 'No files were uploaded.' });
+        }
+
+        
+        const files = req.files.map(file => ({
+            filename: file.filename,
+            originalName: file.originalname,
+            path: file.path
+        }));
 
         if (!req.user || !req.user._id) {
             return res.status(401).json({ message: 'User not authenticated' });
@@ -21,15 +32,15 @@ const submitAssignment = async (req, res) => {
             course, 
             deadline,
             description,
-            files
-        })
+            files  
+        });
 
-
-        await newAssignment.save()
-        res.status(201).json({ message: 'Assignment submitted successfully!'})
+        await newAssignment.save();
+        console.log('Assignment saved:', newAssignment);  
+        res.status(201).json({ message: 'Assignment submitted successfully!', files: newAssignment.files });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error'})
+        console.error('Error in submitAssignment:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 }
 
@@ -52,63 +63,136 @@ const getRecentAssignments = async(req, res) => {
 const getAllAssignments = async (req, res) => {
     try {
         const assignments = await Assignment.find()
-        .sort({ createdAt: -1})
-        .populate('userId', 'name, email, programme, phoneNumber')
-        res.status(200).json(assignments)
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error'})
-    }
-}
+            .sort({ createdAt: -1 })
+            .populate('userId', 'name email programme phoneNumber');
+        
+        
+        const assignmentsWithFiles = assignments.map(assignment => {
+            return {
+                ...assignment.toObject(),
+                files: assignment.files.map(filename => ({
+                    name: filename,
+                    url: `/api/assignments/download/${assignment._id}/${filename}`
+                }))
+            };
+        });
 
-const downloadFile = async(req, res) => {
+        res.status(200).json(assignmentsWithFiles);
+    } catch (error) {
+        console.error('Error in getAllAssignments:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+const downloadFile = async (req, res) => {
+    console.log('Download request received:', req.params);
     try {
-        const {assignmentId, filename} = req.params;
+        const { assignmentId, filename } = req.params;
 
-        const assignment = await Assignment.findById(assignmentId)
-        if(!assignment) {
-            return res.status(404).json({ message: 'Assignment not found'})
-        }
-        if(!assignment.files.includes(filename)){
-            return res.status(404).json({ message: 'File not found for this assignment'})
+        if (!assignmentId || !filename) {
+            console.error('Missing assignmentId or filename:', { assignmentId, filename });
+            return res.status(400).json({ message: 'Missing assignmentId or filename' });
         }
 
-        const filePath = path.join(__dirname, '..', 'uploads', filename)
+        const assignment = await Assignment.findById(assignmentId);
+        if (!assignment) {
+            console.error('Assignment not found:', assignmentId);
+            return res.status(404).json({ message: 'Assignment not found' });
+        }
 
-        if(fs.existsSync(filePath)){
-            res.download(filePath, filename, (err) => {
-                if(err) {
-                    res.status(500).json({ message: 'Error downloading file'})
+        console.log('Assignment found:', assignment);
+
+        
+        const file = assignment.files.find(f => f.filename === filename);
+        if (!file) {
+            console.error('File not found in assignment:', { assignmentId, filename });
+            return res.status(404).json({ message: 'File not found for this assignment' });
+        }
+
+        console.log('File found:', file);
+
+        const filePath = file.path;
+
+        if (fs.existsSync(filePath)) {
+            res.download(filePath, file.originalName, (err) => {
+                if (err) {
+                    console.error('Error downloading file:', err);
+                    res.status(500).json({ message: 'Error downloading file' });
                 }
-            })
+            });
         } else {
-            res.status(404).json({ message: 'File not found'})
+            console.error('File not found on server:', filePath);
+            res.status(404).json({ message: 'File not found on server' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server error'})
+        console.error('Server error in downloadFile:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
-}
+};
+
 
 
 const updateAssignmentStatus = async (req, res) => {
     try {
-        const {assignmentId} = req.params;
-        const {status} = req.body
+        const { assignmentId } = req.params;
+        const { status } = req.body;
 
-        const assignment = await Assignment.findById(assignmentId)
-        if(!assignment) {
-            return res.status(404).json({ message: 'Assignment not found'})
+        console.log('Updating assignment status:', { assignmentId, status });
+
+        // Validate inputs
+        if (!assignmentId || !status) {
+            return res.status(400).json({ 
+                message: 'Missing required fields',
+                details: { assignmentId: !!assignmentId, status: !!status }
+            });
         }
 
-        assignment.status = status;
-        await assignment.save()
+        // Validate status value
+        const validStatuses = ['pending', 'in_progress', 'submitted'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ 
+                message: 'Invalid status value',
+                validValues: validStatuses 
+            });
+        }
 
-        res.status(200).json({ message: 'Assignment status updated successfully'})
+        // Check if assignment exists
+        const assignment = await Assignment.findById(assignmentId);
+        if (!assignment) {
+            return res.status(404).json({ 
+                message: 'Assignment not found',
+                assignmentId 
+            });
+        }
+
+        // Update status
+        assignment.status = status;
+        const updatedAssignment = await assignment.save();
+
+        console.log('Assignment status updated successfully:', {
+            id: updatedAssignment._id,
+            newStatus: updatedAssignment.status
+        });
+
+        res.status(200).json({ 
+            message: 'Assignment status updated successfully',
+            assignment: {
+                id: updatedAssignment._id,
+                status: updatedAssignment.status
+            }
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error'})
+        console.error('Error in updateAssignmentStatus:', {
+            error: error.message,
+            stack: error.stack
+        });
+        
+        res.status(500).json({ 
+            message: 'Server error',
+            details: error.message
+        });
     }
-}
+};
 
 
 const completeAssignment = async (req, res) => {

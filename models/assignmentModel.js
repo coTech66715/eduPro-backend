@@ -34,7 +34,11 @@ const assignmentSchema = new mongoose.Schema({
         required: true
     },
     description: String,
-    files: [{type: String}],
+    files: [{
+        filename: String,
+        originalName: String,
+        path: String
+    }],
     status: {
         type: String,
         enum: ['pending', 'in_progress', 'submitted'],
