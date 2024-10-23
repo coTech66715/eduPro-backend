@@ -44,7 +44,7 @@ app.use((err, req, res, next) => {
 app.use('/api/assignments', assignmentRoute)
 
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000
 
 
 app.listen(PORT, () => {
