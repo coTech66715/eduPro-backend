@@ -84,51 +84,33 @@ const getAllAssignments = async (req, res) => {
     }
 };
 
-const downloadFile = async (req, res) => {
-    console.log('Download request received:', req.params);
+const downloadFile = async(req, res) => {
     try {
-        const { assignmentId, filename } = req.params;
+        const {assignmentId, filename} = req.params;
 
-        if (!assignmentId || !filename) {
-            console.error('Missing assignmentId or filename:', { assignmentId, filename });
-            return res.status(400).json({ message: 'Missing assignmentId or filename' });
+        const assignment = await Assignment.findById(assignmentId)
+        if(!assignment) {
+            return res.status(404).json({ message: 'Assignment not found'})
+        }
+        if(!assignment.files.includes(filename)){
+            return res.status(404).json({ message: 'File not found for this assignment'})
         }
 
-        const assignment = await Assignment.findById(assignmentId);
-        if (!assignment) {
-            console.error('Assignment not found:', assignmentId);
-            return res.status(404).json({ message: 'Assignment not found' });
-        }
+        const filePath = path.join(__dirname, '..', 'uploads', filename)
 
-        console.log('Assignment found:', assignment);
-
-        
-        const file = assignment.files.find(f => f.filename === filename);
-        if (!file) {
-            console.error('File not found in assignment:', { assignmentId, filename });
-            return res.status(404).json({ message: 'File not found for this assignment' });
-        }
-
-        console.log('File found:', file);
-
-        const filePath = file.path;
-
-        if (fs.existsSync(filePath)) {
-            res.download(filePath, file.originalName, (err) => {
-                if (err) {
-                    console.error('Error downloading file:', err);
-                    res.status(500).json({ message: 'Error downloading file' });
+        if(fs.existsSync(filePath)){
+            res.download(filePath, filename, (err) => {
+                if(err) {
+                    res.status(500).json({ message: 'Error downloading file'})
                 }
-            });
+            })
         } else {
-            console.error('File not found on server:', filePath);
-            res.status(404).json({ message: 'File not found on server' });
+            res.status(404).json({ message: 'File not found'})
         }
     } catch (error) {
-        console.error('Server error in downloadFile:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Server error'})
     }
-};
+}
 
 
 
