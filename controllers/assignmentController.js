@@ -2,6 +2,7 @@ const Assignment = require('../models/assignmentModel')
 const path = require('path')
 const fs = require('fs')
 
+
 const submitAssignment = async (req, res) => {
     try {
         const { name, email, studentId, phoneNumber, programme, course, deadline, description } = req.body;
