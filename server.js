@@ -22,7 +22,7 @@ app.use('/uploads', express.static('uploads'))
 app.use(cors()); 
 
 app.use(cors({
-  origin: 'https://edupro-ten.vercel.app/', 
+  origin: 'https://edupro-mu.vercel.app', 
   credentials: true
 }))
 
