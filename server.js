@@ -21,10 +21,20 @@ app.use(bodyParser.json())
 app.use('/uploads', express.static('uploads'))
 app.use(cors()); 
 
-app.use(cors({
-  origin: 'https://edupro-mu.vercel.app', 
-  credentials: true
-}))
+const allowedOrigins = ['https://edupro-ten.vercel.app', 'https://edupro-mu.vercel.app'];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+
+app.use(cors(corsOptions));
+
 
 
 
