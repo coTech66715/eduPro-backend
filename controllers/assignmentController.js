@@ -85,33 +85,55 @@ const getAllAssignments = async (req, res) => {
     }
 };
 
-const downloadFile = async(req, res) => {
+const downloadFile = async (req, res) => {
     try {
-        const {assignmentId, filename} = req.params;
-
-        const assignment = await Assignment.findById(assignmentId)
-        if(!assignment) {
-            return res.status(404).json({ message: 'Assignment not found'})
-        }
-        if(!assignment.files.includes(filename)){
-            return res.status(404).json({ message: 'File not found for this assignment'})
+        const { assignmentId, filename } = req.params;
+        
+        // Validate inputs
+        if (!assignmentId || !filename) {
+            return res.status(400).json({ message: 'Missing required parameters' });
         }
 
-        const filePath = path.join(__dirname, '..', 'uploads', filename)
-
-        if(fs.existsSync(filePath)){
-            res.download(filePath, filename, (err) => {
-                if(err) {
-                    res.status(500).json({ message: 'Error downloading file'})
-                }
-            })
-        } else {
-            res.status(404).json({ message: 'File not found'})
+        const assignment = await Assignment.findById(assignmentId);
+        if (!assignment) {
+            return res.status(404).json({ message: 'Assignment not found' });
         }
+
+        // Ensure the file exists in the assignment's files array
+        if (!assignment.files.includes(filename)) {
+            return res.status(404).json({ message: 'File not found for this assignment' });
+        }
+
+        const filePath = path.join(__dirname, '..', 'uploads', filename);
+
+        // Check if file exists in filesystem
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ message: 'File not found on server' });
+        }
+
+        // Set appropriate headers
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+        // Stream the file instead of loading it all into memory
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+
+        // Handle stream errors
+        fileStream.on('error', (error) => {
+            console.error('Stream error:', error);
+            if (!res.headersSent) {
+                res.status(500).json({ message: 'Error streaming file' });
+            }
+        });
+
     } catch (error) {
-        res.status(500).json({ message: 'Server error'})
+        console.error('Download error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ message: 'Server error' });
+        }
     }
-}
+};
 
 
 
